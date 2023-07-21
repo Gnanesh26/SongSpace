@@ -53,20 +53,20 @@ public class SongService {
 //
 //    return filteredSongs;
 //}
-public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
-    List<Song> filteredSongs = songRepository.findAll().stream()
-            .filter(song ->
-                    (searchTitle == null || song.getTitle().contains(searchTitle)) &&
-                            (filterArtist == null || song.getArtist().equals(filterArtist)) &&
-                            (filterGenres == null || song.getGenres().equals(filterGenres)))
-            .collect(Collectors.toList());
-
-    if (filteredSongs.isEmpty()) {
-        throw new IllegalArgumentException("No songs found with the provided criteria.");
-    }
-
-    return filteredSongs;
-}
+//public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
+//    List<Song> filteredSongs = songRepository.findAll().stream()
+//            .filter(song ->
+//                    (searchTitle == null || song.getTitle().contains(searchTitle)) &&
+//                            (filterArtist == null || song.getArtist().equals(filterArtist)) &&
+//                            (filterGenres == null || song.getGenres().equals(filterGenres)))
+//            .collect(Collectors.toList());
+//
+//    if (filteredSongs.isEmpty()) {
+//        throw new IllegalArgumentException("No songs found with the provided criteria.");
+//    }
+//
+//    return filteredSongs;
+//}
 
 
     public String addUser(UserInfo userInfo) {
@@ -74,6 +74,22 @@ public List<Song> getSongs(String searchTitle, String filterArtist, String filte
         userInfoRepository.save(userInfo);
         return "user added to system ";
     }
+
+    public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
+        List<Song> filteredSongs = songRepository.findAll().stream()
+                .filter(song ->
+                        (searchTitle == null || song.getTitle().contains(searchTitle)) &&
+                                (filterArtist == null || song.getArtist().equals(filterArtist)) &&
+                                (filterGenres == null || song.getGenres().equals(filterGenres)))
+                .collect(Collectors.toList());
+
+        if (filteredSongs.isEmpty()) {
+            throw new IllegalArgumentException("No songs found with the provided criteria.");
+        }
+
+        return filteredSongs;
+    }
+
 
 }
 

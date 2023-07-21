@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,25 +44,43 @@ public class SongController {
 
 
     @PreAuthorize("hasAuthority('listener')")
-    @GetMapping("/songs")
-    public ResponseEntity<?> getSongs(
+        @GetMapping("/songs")
+    public ResponseEntity<List<SongDto>> getSongs(
             @RequestParam(required = false) String searchTitle,
             @RequestParam(required = false) String filterArtist,
-            @RequestParam(required = false) String filterGenres
+            @RequestParam(required = false) String filterGenres,
+            @RequestParam(value = "sortField", defaultValue = "title") String sortField
     ) {
-        try {
-            List<Song> songs = songService.getSongs(searchTitle, filterArtist, filterGenres);
+        List<Song> songs = songService.getSongs(searchTitle, filterArtist, filterGenres);
 
-            // Create a new list of simplified SongDto objects without the thumbnail field
-            List<SongDto> simplifiedSongs = songs.stream()
-                    .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
-                    .collect(Collectors.toList());
+        // Create a new list of simplified SongDto objects without the thumbnail field
+        List<SongDto> simplifiedSongs = songs.stream()
+                .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+                .collect(Collectors.toList());
 
-            return new ResponseEntity<>(simplifiedSongs, HttpStatus.OK);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No songs found with the provided criteria.");
-        }
+        // Split the list into two separate lists: one for songs starting with the given letter and another for the rest
+        List<SongDto> startingWithLetter = new ArrayList<>();
+        List<SongDto> remainingSongs = new ArrayList<>();
+        simplifiedSongs.forEach(song -> {
+            if (song.getTitle().toLowerCase().startsWith(sortField.toLowerCase())) {
+                startingWithLetter.add(song);
+            } else {
+                remainingSongs.add(song);
+            }
+        });
+
+        // Sort each list individually
+        startingWithLetter.sort(Comparator.comparing(SongDto::getTitle));
+        remainingSongs.sort(Comparator.comparing(SongDto::getTitle));
+
+        // Concatenate the two lists
+        List<SongDto> sortedSongs = new ArrayList<>(startingWithLetter);
+        sortedSongs.addAll(remainingSongs);
+
+        return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
     }
+
+
 
 //    @PostMapping("/post")
 //    public ResponseEntity<Song> addSong(
@@ -85,6 +105,9 @@ public class SongController {
 //            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 //        }
 //    }
+
+
+
 
 //    @PostMapping("/add")
 //    public String addNewUser(@RequestBody UserInfo userInfo) {
