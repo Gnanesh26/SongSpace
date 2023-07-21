@@ -102,7 +102,7 @@ public class SongService {
     public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime) {
         List<Song> songs = songRepository.findAll();
 
-        // Separate songs with the provided date and others
+        // Separate songs with the provided date
         List<Song> givenDateSongs = new ArrayList<>();
         List<Song> remainingSongs = new ArrayList<>();
 
