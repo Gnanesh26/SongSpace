@@ -20,6 +20,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,17 +35,18 @@ public class SongController {
     @Autowired
 
     SongRepository songRepository;
+    private Date uploadedDate;
 
 //    @PreAuthorize("hasAuthority('listener')")
 //    @GetMapping("/allsongs")
 //    public ResponseEntity<List<Song>> getAllSongs() {
 //        List<Song> songs = songService.getAllSongs();
 //        return new ResponseEntity<>(songs, HttpStatus.OK);
-//    }
+//
 
+        @PreAuthorize("hasAuthority('listener')")
 
-    @PreAuthorize("hasAuthority('listener')")
-        @GetMapping("/songs")
+    @GetMapping("/songs")
     public ResponseEntity<List<SongDto>> getSongs(
             @RequestParam(required = false) String searchTitle,
             @RequestParam(required = false) String filterArtist,
@@ -76,12 +78,11 @@ public class SongController {
         // Concatenate the two lists
         List<SongDto> sortedSongs = new ArrayList<>(startingWithLetter);
         sortedSongs.addAll(remainingSongs);
-
         return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
     }
 
 
-
+        // sample posting for  storing data in databse
 //    @PostMapping("/post")
 //    public ResponseEntity<Song> addSong(
 //            @RequestParam("thumbnail") MultipartFile thumbnailFile,
@@ -108,7 +109,7 @@ public class SongController {
 
 
 
-
+      // add users and password to db
 //    @PostMapping("/add")
 //    public String addNewUser(@RequestBody UserInfo userInfo) {
 //        return songService.addUser(userInfo);
