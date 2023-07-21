@@ -9,8 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class SongService {
@@ -93,18 +99,45 @@ public class SongService {
     }
 
 
+    public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime) {
+        List<Song> songs = songRepository.findAll();
 
+        // Separate songs with the provided date and others
+        List<Song> givenDateSongs = new ArrayList<>();
+        List<Song> remainingSongs = new ArrayList<>();
 
-    public List<SongDto> getSongsSortedByUploadedDate() {
-        List<Song> songs = songRepository.findAll(Sort.by(Sort.Direction.ASC, "uploadedDate"));
+        for (Song song : songs) {
+            OffsetDateTime songDateTime = song.getUploadedDate().toInstant().atOffset(ZoneOffset.UTC);
+            if (songDateTime.isEqual(targetDateTime)) {
+                givenDateSongs.add(song);
+            } else {
+                remainingSongs.add(song);
+            }
+        }
 
-        // Convert to SongDto objects
-        List<SongDto> songDtos = songs.stream()
-                .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
-                .collect(Collectors.toList());
+        // Sort the remaining songs in ascending order of uploaded dates
+        remainingSongs.sort(Comparator.comparing(song -> song.getUploadedDate().toInstant().atOffset(ZoneOffset.UTC)));
+
+        // Combine both lists and convert to SongDto objects
+        List<SongDto> songDtos = Stream.concat(
+                givenDateSongs.stream().map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist())),
+                remainingSongs.stream().map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+        ).collect(Collectors.toList());
 
         return songDtos;
     }
+
+//
+//    public List<SongDto> getSongsSortedByUploadedDate(LocalDate targetDate) {
+//        List<Song> songs = songRepository.findAll(Sort.by(Sort.Direction.ASC, "uploadedDate"));
+//
+//        // Convert to SongDto objects
+//        List<SongDto> songDtos = songs.stream()
+//                .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+//                .collect(Collectors.toList());
+//
+//        return songDtos;
+//    }
 }
 
 

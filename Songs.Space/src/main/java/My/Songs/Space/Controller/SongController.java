@@ -18,8 +18,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,7 +44,7 @@ public class SongController {
 //
 
         @PreAuthorize("hasAuthority('listener')")
-//
+////
     @GetMapping("/songs")
     public ResponseEntity<List<SongDto>> getSongs(
             @RequestParam(required = false) String searchTitle,
@@ -82,16 +81,19 @@ public class SongController {
 
             return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
     }
-
+//
     @PreAuthorize("hasAuthority('listener')")
     @GetMapping("/sortbydate")
-    public ResponseEntity<List<SongDto>> getSongs() {
-        List<SongDto> songs = songService.getSongsSortedByUploadedDate();
+    public ResponseEntity<List<SongDto>> getSongs(@RequestParam("date") String dateStr) {
+        OffsetDateTime targetDateTime = OffsetDateTime.parse(dateStr); // Parse the provided date string to OffsetDateTime
+
+        List<SongDto> songs = songService.getSongsSortedByUploadedDate(targetDateTime);
         return new ResponseEntity<>(songs, HttpStatus.OK);
     }
 
 
-        // sample posting for  storing data in databse
+
+    // sample posting for  storing data in databse
 //    @PostMapping("/post")
 //    public ResponseEntity<Song> addSong(
 //            @RequestParam("thumbnail") MultipartFile thumbnailFile,
