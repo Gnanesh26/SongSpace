@@ -45,7 +45,7 @@ public class SongController {
 //
 
         @PreAuthorize("hasAuthority('listener')")
-
+//
     @GetMapping("/songs")
     public ResponseEntity<List<SongDto>> getSongs(
             @RequestParam(required = false) String searchTitle,
@@ -78,7 +78,16 @@ public class SongController {
         // Concatenate the two lists
         List<SongDto> sortedSongs = new ArrayList<>(startingWithLetter);
         sortedSongs.addAll(remainingSongs);
-        return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
+            simplifiedSongs.sort(Comparator.comparing(SongDto::getUploadedDate).reversed());
+
+            return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('listener')")
+    @GetMapping("/sortbydate")
+    public ResponseEntity<List<SongDto>> getSongs() {
+        List<SongDto> songs = songService.getSongsSortedByUploadedDate();
+        return new ResponseEntity<>(songs, HttpStatus.OK);
     }
 
 

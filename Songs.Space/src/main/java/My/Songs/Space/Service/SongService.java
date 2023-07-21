@@ -1,10 +1,12 @@
 package My.Songs.Space.Service;
 
+import My.Songs.Space.Dto.SongDto;
 import My.Songs.Space.Entity.Song;
 import My.Songs.Space.Entity.UserInfo;
 import My.Songs.Space.Repository.SongRepository;
 import My.Songs.Space.Repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -91,6 +93,18 @@ public class SongService {
     }
 
 
+
+
+    public List<SongDto> getSongsSortedByUploadedDate() {
+        List<Song> songs = songRepository.findAll(Sort.by(Sort.Direction.ASC, "uploadedDate"));
+
+        // Convert to SongDto objects
+        List<SongDto> songDtos = songs.stream()
+                .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+                .collect(Collectors.toList());
+
+        return songDtos;
+    }
 }
 
 
