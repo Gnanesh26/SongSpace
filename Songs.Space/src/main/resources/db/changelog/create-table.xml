@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="001" author="Gnanesh">
+        <createTable tableName="songs">
+            <column name="id" type="INT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_song_id"/>
+            </column>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="genres" type="VARCHAR(255)"/>
+            <column name="uploaded_date" type="TIMESTAMP"/>
+            <column name="thumbnail" type="BLOB"/> <!-- Binary Large Object column to store image data -->
+            <column name="artist" type="VARCHAR(255)"/>
+
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="song"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
