@@ -6,13 +6,10 @@ import My.Songs.Space.Entity.UserInfo;
 import My.Songs.Space.Repository.SongRepository;
 import My.Songs.Space.Repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -83,6 +80,8 @@ public class SongService {
         return "user added to system ";
     }
 
+
+
     public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
         List<Song> filteredSongs = songRepository.findAll().stream()
                 .filter(song ->
@@ -92,7 +91,7 @@ public class SongService {
                 .collect(Collectors.toList());
 
         if (filteredSongs.isEmpty()) {
-            throw new IllegalArgumentException("No songs found with the provided criteria.");
+            throw new IllegalArgumentException("No songs found ");
         }
 
         return filteredSongs;
