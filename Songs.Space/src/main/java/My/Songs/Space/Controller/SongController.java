@@ -54,8 +54,8 @@ public class SongController {
             @RequestParam(required = false) String filterGenres,
             @RequestParam(value = "sortField", defaultValue = "title") String sortField
 //                @RequestParam(required = false) String sortField
-    ) {
-
+    )
+    {
         try {
             List<Song> songs = songService.getSongs(searchTitle, filterArtist, filterGenres);
 
