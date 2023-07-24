@@ -17,8 +17,13 @@ import java.util.stream.Stream;
 
 @Service
 public class SongService {
+
+
+
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+
 
     @Autowired
     SongRepository songRepository;
@@ -33,45 +38,6 @@ public class SongService {
         return songRepository.save(song);
     }
 
-//    public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
-//        List<Song> filteredSongs = songRepository.findAll().stream()
-//                .filter(song ->
-//                        (searchTitle == null || song.getTitle().contains(searchTitle)) &&
-//                                (filterArtist == null || song.getArtist().equals(filterArtist)) &&
-//                                (filterGenres == null || song.getGenres().equals(filterGenres)))
-//                .collect(Collectors.toList());
-//
-//        return filteredSongs;
-//    }
-//public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
-//    if (searchTitle == null && filterArtist == null && filterGenres == null) {
-//        // If all parameters are null, return a message indicating to provide search criteria
-//        throw new IllegalArgumentException("Please provide search criteria (searchTitle, filterArtist, or filterGenres).");
-//    }
-//
-//    List<Song> filteredSongs = songRepository.findAll().stream()
-//            .filter(song ->
-//                    (searchTitle == null || song.getTitle().contains(searchTitle)) &&
-//                            (filterArtist == null || song.getArtist().equals(filterArtist)) &&
-//                            (filterGenres == null || song.getGenres().equals(filterGenres)))
-//            .collect(Collectors.toList());
-//
-//    return filteredSongs;
-//}
-//public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
-//    List<Song> filteredSongs = songRepository.findAll().stream()
-//            .filter(song ->
-//                    (searchTitle == null || song.getTitle().contains(searchTitle)) &&
-//                            (filterArtist == null || song.getArtist().equals(filterArtist)) &&
-//                            (filterGenres == null || song.getGenres().equals(filterGenres)))
-//            .collect(Collectors.toList());
-//
-//    if (filteredSongs.isEmpty()) {
-//        throw new IllegalArgumentException("No songs found with the provided criteria.");
-//    }
-//
-//    return filteredSongs;
-//}
 
 
     public String addUser(UserInfo userInfo) {
@@ -81,26 +47,64 @@ public class SongService {
     }
 
 
+    public List<SongDto> getSongsSortedByTitle(String searchTitle, String filterArtist, String filterGenres, String sortField) {
+        List<Song> songs = songRepository.findAll();
 
-    public List<Song> getSongs(String searchTitle, String filterArtist, String filterGenres) {
-        List<Song> filteredSongs = songRepository.findAll().stream()
+        // Filter songs based on searchTitle, filterArtist, and filterGenres
+        List<Song> filteredSongs = songs.stream()
                 .filter(song ->
-                        (searchTitle == null || song.getTitle().contains(searchTitle)) &&
-                                (filterArtist == null || song.getArtist().equals(filterArtist)) &&
-                                (filterGenres == null || song.getGenres().equals(filterGenres)))
+                        (searchTitle == null || song.getTitle().toLowerCase().contains(searchTitle.toLowerCase())) &&
+                                (filterArtist == null || song.getArtist().equalsIgnoreCase(filterArtist)) &&
+                                (filterGenres == null || song.getGenres().equalsIgnoreCase(filterGenres)))
                 .collect(Collectors.toList());
 
-        if (filteredSongs.isEmpty()) {
-            throw new IllegalArgumentException("No songs found ");
+        List<SongDto> sortedSongs;
+
+        if (sortField != null && !sortField.isEmpty()) {
+            // Check if any songs match the specified title in sortField
+            List<Song> songsMatchingSortField = filteredSongs.stream()
+                    .filter(song -> song.getTitle().equalsIgnoreCase(sortField))
+                    .collect(Collectors.toList());
+
+            if (songsMatchingSortField.isEmpty()) {
+                throw new IllegalArgumentException("No songs found with the provided title.");
+            }
+
+            // Sort by title matching the specified value
+            List<SongDto> songsWithTitle = filteredSongs.stream()
+                    .filter(song -> song.getTitle().equalsIgnoreCase(sortField))
+                    .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+                    .collect(Collectors.toList());
+
+            List<SongDto> remainingSongs = filteredSongs.stream()
+                    .filter(song -> !song.getTitle().equalsIgnoreCase(sortField))
+                    .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+                    .collect(Collectors.toList());
+
+            songsWithTitle.sort(Comparator.comparing(SongDto::getTitle));
+            remainingSongs.sort(Comparator.comparing(SongDto::getTitle));
+
+            // Combine the sorted lists
+            songsWithTitle.addAll(remainingSongs);
+
+            sortedSongs = songsWithTitle;
+        } else {
+            // If sortField is empty, sort by uploaded date in descending order
+            sortedSongs = filteredSongs.stream()
+                    .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+                    .sorted(Comparator.comparing(SongDto::getUploadedDate).reversed())
+                    .collect(Collectors.toList());
+
+            if (sortedSongs.isEmpty()) {
+                throw new IllegalArgumentException("No songs found with the provided search criteria.");
+            }
         }
 
-        return filteredSongs;
+        return sortedSongs;
     }
 
 
-
-
-public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime) {
+    public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime) {
         List<Song> songs = songRepository.findAll();
 
         // Separate songs with the provided date
@@ -116,6 +120,10 @@ public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime)
             }
         }
 
+        if (givenDateSongs.isEmpty()) {
+            throw new IllegalArgumentException("No songs found");
+        }
+
         // Sort the remaining songs in ascending order of uploaded dates
         remainingSongs.sort(Comparator.comparing(song -> song.getUploadedDate().toInstant().atOffset(ZoneOffset.UTC)));
 
@@ -127,16 +135,4 @@ public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime)
 
         return songDtos;
     }
-
-//
-//    public List<SongDto> getSongsSortedByUploadedDate(LocalDate targetDate) {
-//        List<Song> songs = songRepository.findAll(Sort.by(Sort.Direction.ASC, "uploadedDate"));
-//
-//        // Convert to SongDto objects
-//        List<SongDto> songDtos = songs.stream()
-//                .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
-//                .collect(Collectors.toList());
-//
-//        return songDtos;
-//    }
 }

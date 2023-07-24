@@ -28,7 +28,6 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf().disable()
-//                .authorizeRequests().requestMatchers("/songs/add").permitAll()
                                 .authorizeRequests().requestMatchers("/add").permitAll()
 
                 .anyRequest().authenticated().and()
@@ -39,6 +38,15 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults());
         return httpSecurity.build();
     }
+//@Bean
+//public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//    return http.csrf().disable()
+//            .authorizeHttpRequests()
+//            .requestMatchers("/songs/add").permitAll()
+//            .and()
+//            .authorizeHttpRequests().requestMatchers("/songs/**")
+//            .authenticated().and().formLogin().and().build();
+//}
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

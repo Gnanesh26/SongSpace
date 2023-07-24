@@ -6,6 +6,7 @@ import My.Songs.Space.Entity.Song;
 import My.Songs.Space.Entity.UserInfo;
 import My.Songs.Space.Repository.SongRepository;
 import My.Songs.Space.Service.SongService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -19,14 +20,14 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import java.util.List;
 
+
 @RestController
-//@RequestMapping("/songs")
+@RequestMapping("/songs")
 public class SongController {
 
     @Autowired
@@ -44,66 +45,48 @@ public class SongController {
 //
 
     @PreAuthorize("hasAuthority('listener')")
-////
-
-
     @GetMapping("/songs")
     public ResponseEntity<?> getSongs(
             @RequestParam(required = false) String searchTitle,
             @RequestParam(required = false) String filterArtist,
             @RequestParam(required = false) String filterGenres,
-            @RequestParam(value = "sortField", defaultValue = "title") String sortField
-//                @RequestParam(required = false) String sortField
-    )
-    {
-        try {
-            List<Song> songs = songService.getSongs(searchTitle, filterArtist, filterGenres);
+            @RequestParam(value = "sortField", defaultValue = "") String sortField,
+            @RequestParam(required = false, defaultValue = "") String date) {
 
-            // without the thumbnail field
-            List<SongDto> simplifiedSongs = songs.stream()
-                    .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
-                    .collect(Collectors.toList());
+        // Check if at least one search, filter, or sort parameter is provided
+        if (StringUtils.isAllBlank(searchTitle, filterArtist, filterGenres) && StringUtils.isBlank(sortField) && StringUtils.isBlank(date)) {
+            String errorMessage = "No search criteria provided. Please provide at least one valid search, filter, or sort parameter.";
+            return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+        }
 
-            // Split(list)  one for songs starting with the given letter and another for the rest
-            List<SongDto> startingWithLetter = new ArrayList<>();
-            List<SongDto> remainingSongs = new ArrayList<>();
-            simplifiedSongs.forEach(song -> {
-                if (song.getTitle().toLowerCase().startsWith(sortField.toLowerCase())) {
-                    startingWithLetter.add(song);
-                } else {
-                    remainingSongs.add(song);
-                }
-            });
-
-            // Sort each list individually
-            startingWithLetter.sort(Comparator.comparing(SongDto::getTitle));
-            remainingSongs.sort(Comparator.comparing(SongDto::getTitle));
-
-            // Add  the two lists
-            List<SongDto> sortedSongs = new ArrayList<>(startingWithLetter);
-            sortedSongs.addAll(remainingSongs);
-            simplifiedSongs.sort(Comparator.comparing(SongDto::getUploadedDate).reversed());
-            return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            // no songs are found with required fields
-            String errorMessage = "No songs found";
-            return new ResponseEntity<>(errorMessage, HttpStatus.NOT_FOUND);
+        if (StringUtils.isNotBlank(date)) {
+            try {
+                OffsetDateTime targetDateTime = OffsetDateTime.parse(date); // Parse the provided date string to OffsetDateTime
+                List<SongDto> songsByDate = songService.getSongsSortedByUploadedDate(targetDateTime);
+                return new ResponseEntity<>(songsByDate, HttpStatus.OK);
+            } catch (DateTimeParseException e) {
+                String errorMessage = "Invalid date format. Please provide a valid date in ISO-8601 format (e.g., 2023-07-31T12:00:00Z).";
+                return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+            } catch (IllegalArgumentException e) {
+                String errorMessage = e.getMessage();
+                return new ResponseEntity<>(errorMessage, HttpStatus.NOT_FOUND);
+            }
+        } else {
+            // If sortField is provided, sort by title matching the specified value
+            List<SongDto> songsByTitle;
+            try {
+                songsByTitle = songService.getSongsSortedByTitle(searchTitle, filterArtist, filterGenres, sortField);
+            } catch (IllegalArgumentException e) {
+                String errorMessage = e.getMessage();
+                return new ResponseEntity<>(errorMessage, HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(songsByTitle, HttpStatus.OK);
         }
     }
 
-    //
-    @PreAuthorize("hasAuthority('listener')")
-    @GetMapping("/sortbydate")
-    public ResponseEntity<List<SongDto>> getSongs(@RequestParam("date") String dateStr) {
-        OffsetDateTime targetDateTime = OffsetDateTime.parse(dateStr); // Parse the provided date string to OffsetDateTime
-
-        List<SongDto> songs = songService.getSongsSortedByUploadedDate(targetDateTime);
-        return new ResponseEntity<>(songs, HttpStatus.OK);
-    }
 
 
-
-    // sample posting for  storing data in databse
+        // sample posting for  storing data in databse
 //    @PostMapping("/post")
 //    public ResponseEntity<Song> addSong(
 //            @RequestParam("thumbnail") MultipartFile thumbnailFile,
@@ -129,12 +112,12 @@ public class SongController {
 //    }
 
 
-
-    // add users and password to db
+        // add users and password to db
 //    @PostMapping("/add")
 //    public String addNewUser(@RequestBody UserInfo userInfo) {
 //        return songService.addUser(userInfo);
 //    }
+
 
     @PreAuthorize("hasAuthority('artist')")
     @DeleteMapping("/{songId}")
