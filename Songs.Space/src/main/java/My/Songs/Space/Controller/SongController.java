@@ -43,60 +43,53 @@ public class SongController {
 //        return new ResponseEntity<>(songs, HttpStatus.OK);
 //
 
-        @PreAuthorize("hasAuthority('listener')")
+    @PreAuthorize("hasAuthority('listener')")
 ////
 
 
-        @GetMapping("/songs")
-        public ResponseEntity<?> getSongs(
-                @RequestParam(required = false) String searchTitle,
-                @RequestParam(required = false) String filterArtist,
-                @RequestParam(required = false) String filterGenres,
-                @RequestParam(value = "sortField", defaultValue = "title") String sortField
+    @GetMapping("/songs")
+    public ResponseEntity<?> getSongs(
+            @RequestParam(required = false) String searchTitle,
+            @RequestParam(required = false) String filterArtist,
+            @RequestParam(required = false) String filterGenres,
+            @RequestParam(value = "sortField", defaultValue = "title") String sortField
 //                @RequestParam(required = false) String sortField
-        ) {
+    ) {
 
-                // Check if all filtering criteria are null or empty
-                if (searchTitle == null && filterArtist == null && filterGenres == null) {
-                    String infoMessage = "Please provide information about songs.";
-                    return new ResponseEntity<>(infoMessage, HttpStatus.BAD_REQUEST);
+        try {
+            List<Song> songs = songService.getSongs(searchTitle, filterArtist, filterGenres);
+
+            // without the thumbnail field
+            List<SongDto> simplifiedSongs = songs.stream()
+                    .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
+                    .collect(Collectors.toList());
+
+            // Split(list)  one for songs starting with the given letter and another for the rest
+            List<SongDto> startingWithLetter = new ArrayList<>();
+            List<SongDto> remainingSongs = new ArrayList<>();
+            simplifiedSongs.forEach(song -> {
+                if (song.getTitle().toLowerCase().startsWith(sortField.toLowerCase())) {
+                    startingWithLetter.add(song);
+                } else {
+                    remainingSongs.add(song);
                 }
+            });
 
-                try {
-                List<Song> songs = songService.getSongs(searchTitle, filterArtist, filterGenres);
+            // Sort each list individually
+            startingWithLetter.sort(Comparator.comparing(SongDto::getTitle));
+            remainingSongs.sort(Comparator.comparing(SongDto::getTitle));
 
-                // without the thumbnail field
-                List<SongDto> simplifiedSongs = songs.stream()
-                        .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
-                        .collect(Collectors.toList());
-
-                // Split(list)  one for songs starting with the given letter and another for the rest
-                List<SongDto> startingWithLetter = new ArrayList<>();
-                List<SongDto> remainingSongs = new ArrayList<>();
-                simplifiedSongs.forEach(song -> {
-                    if (song.getTitle().toLowerCase().startsWith(sortField.toLowerCase())) {
-                        startingWithLetter.add(song);
-                    } else {
-                        remainingSongs.add(song);
-                    }
-                });
-
-                // Sort each list individually
-                startingWithLetter.sort(Comparator.comparing(SongDto::getTitle));
-                remainingSongs.sort(Comparator.comparing(SongDto::getTitle));
-
-                // Add  the two lists
-                List<SongDto> sortedSongs = new ArrayList<>(startingWithLetter);
-                sortedSongs.addAll(remainingSongs);
-                simplifiedSongs.sort(Comparator.comparing(SongDto::getUploadedDate).reversed());
-                return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
-            } catch (IllegalArgumentException e) {
-                // no songs are found with required fields
-                String errorMessage = "No songs found";
-                return new ResponseEntity<>(errorMessage, HttpStatus.NOT_FOUND);
-            }
+            // Add  the two lists
+            List<SongDto> sortedSongs = new ArrayList<>(startingWithLetter);
+            sortedSongs.addAll(remainingSongs);
+            simplifiedSongs.sort(Comparator.comparing(SongDto::getUploadedDate).reversed());
+            return new ResponseEntity<>(sortedSongs, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            // no songs are found with required fields
+            String errorMessage = "No songs found";
+            return new ResponseEntity<>(errorMessage, HttpStatus.NOT_FOUND);
         }
-
+    }
 
     //
     @PreAuthorize("hasAuthority('listener')")
@@ -137,7 +130,7 @@ public class SongController {
 
 
 
-      // add users and password to db
+    // add users and password to db
 //    @PostMapping("/add")
 //    public String addNewUser(@RequestBody UserInfo userInfo) {
 //        return songService.addUser(userInfo);
@@ -264,4 +257,3 @@ public class SongController {
         }
     }
 }
-
