@@ -157,34 +157,44 @@ public class SongController {
 
     @PreAuthorize("hasAuthority('artist')")
     @PostMapping("/upload")
-    public ResponseEntity<String> addSong(@RequestParam("title") String title,
-                                          @RequestParam("genres") String genres,
-                                          @RequestParam("uploadedDate") String uploadedDateStr,
-                                          @RequestParam("thumbnail") MultipartFile thumbnailFile,
-                                          @RequestParam("artist") String artist,
+    public ResponseEntity<String> addSong(@RequestParam(value = "title", required = false) String title,
+                                          @RequestParam(value = "genres", required = false) String genres,
+                                          @RequestParam(value = "uploadedDate", required = false) String uploadedDateStr,
+                                          @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnailFile,
+                                          @RequestParam(value = "artist", required = true) String artist,
                                           Principal principal) {
         String authenticatedArtist = principal.getName();
 
         // Check if the authenticated artist matches the provided artist name
-        if (!authenticatedArtist.equals(artist)) {
+        if (artist != null && !authenticatedArtist.equals(artist)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to upload songs for other artists.");
         }
 
         // Create a new Song object with the extracted data
         Song newSong = new Song();
-        newSong.setTitle(title);
-        newSong.setGenres(genres);
 
-        // to handle date parsing appropriately
-        Date uploadedDate = parseUploadedDate(uploadedDateStr);
-        newSong.setUploadedDate(uploadedDate);
+        if (title != null) {
+            newSong.setTitle(title);
+        }
 
-        // Set the artist of the new song based by the given artist name
-        newSong.setArtist(artist);
+        if (genres != null) {
+            newSong.setGenres(genres);
+        }
+
+        if (uploadedDateStr != null) {
+            Date uploadedDate = parseUploadedDate(uploadedDateStr);
+            newSong.setUploadedDate(uploadedDate);
+        }
+
+        if (artist != null) {
+            newSong.setArtist(artist);
+        }
 
         try {
-            // Convert the MultipartFile to a byte array and set it as the thumbnail
-            newSong.setThumbnail(thumbnailFile.getBytes());
+            if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+                // Convert the MultipartFile to a byte array and set it as the thumbnail
+                newSong.setThumbnail(thumbnailFile.getBytes());
+            }
 
             // Save the new song to the database
             songRepository.save(newSong);
@@ -194,6 +204,44 @@ public class SongController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading thumbnail");
         }
     }
+//    @PostMapping("/upload")
+//    public ResponseEntity<String> addSong(@RequestParam("title") String title,
+//                                          @RequestParam("genres") String genres,
+//                                          @RequestParam("uploadedDate") String uploadedDateStr,
+//                                          @RequestParam("thumbnail") MultipartFile thumbnailFile,
+//                                          @RequestParam("artist") String artist,
+//                                          Principal principal) {
+//        String authenticatedArtist = principal.getName();
+//
+//        // Check if the authenticated artist matches the provided artist name
+//        if (!authenticatedArtist.equals(artist)) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to upload songs for other artists.");
+//        }
+//
+//        // Create a new Song object with the extracted data
+//        Song newSong = new Song();
+//        newSong.setTitle(title);
+//        newSong.setGenres(genres);
+//
+//        // to handle date parsing appropriately
+//        Date uploadedDate = parseUploadedDate(uploadedDateStr);
+//        newSong.setUploadedDate(uploadedDate);
+//
+//        // Set the artist of the new song based by the given artist name
+//        newSong.setArtist(artist);
+//
+//        try {
+//            // Convert the MultipartFile to a byte array and set it as the thumbnail
+//            newSong.setThumbnail(thumbnailFile.getBytes());
+//
+//            // Save the new song to the database
+//            songRepository.save(newSong);
+//
+//            return ResponseEntity.ok("Song added successfully");
+//        } catch (IOException e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading thumbnail");
+//        }
+//    }
 
 
 
