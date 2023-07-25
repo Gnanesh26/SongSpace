@@ -201,8 +201,9 @@ public class SongController {
     @PutMapping("/{songId}")
     public ResponseEntity<String> updateSong(@PathVariable Long songId,
                                              @ModelAttribute SongUpdateDTO songUpdateDTO,
+//                                             @RequestBody SongUpdateDTO songUpdateDTO,
                                              Authentication authentication) throws IOException {
-        // 1: Check if the user is authenticated ( is artist or not )
+        // 1: Check if the user is authenticated (is artist or not)
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in to update a song.");
         }
@@ -210,7 +211,7 @@ public class SongController {
         // 2: Get the authenticated artist's username
         String authenticatedArtist = authentication.getName();
 
-        // Getting  the Song which already present in the db using the songId
+        // Getting the Song which is already present in the db using the songId
         Optional<Song> optionalSong = songRepository.findById(songId);
 
         if (optionalSong.isEmpty()) {
@@ -226,6 +227,7 @@ public class SongController {
 
         // Proceed with the update as the artist is authorized to modify the song
 
+        // Update the title and genres if provided in the DTO
         if (songUpdateDTO.getTitle() != null) {
             existingSong.setTitle(songUpdateDTO.getTitle());
         }
@@ -233,12 +235,9 @@ public class SongController {
         if (songUpdateDTO.getGenres() != null) {
             existingSong.setGenres(songUpdateDTO.getGenres());
         }
-        if (songUpdateDTO.getThumbnailFile() != null) {
-            existingSong.setThumbnail(songUpdateDTO.getThumbnailFile().getBytes());
-        }
 
+        // Update the uploaded date if provided in the DTO
         if (songUpdateDTO.getUploadedDate() != null) {
-            // Parse the uploaded date from the String representation to Date
             try {
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                 Date uploadedDate = format.parse(songUpdateDTO.getUploadedDate());
@@ -248,18 +247,19 @@ public class SongController {
             }
         }
 
-        try {
-            // Convert  MultipartFile to a byte array and set it as the new thumbnail (pic)
-            if (songUpdateDTO.getThumbnailFile() != null) {
-                existingSong.setThumbnail(songUpdateDTO.getThumbnailFile().getBytes());
-            }
-
-            // Save the updated song to the db
-            songRepository.save(existingSong);
-
-            return ResponseEntity.ok("Song updated successfully");
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading thumbnail");
+        // Update the thumbnail if provided in the DTO
+        if (songUpdateDTO.getThumbnailFile() != null) {
+            existingSong.setThumbnail(songUpdateDTO.getThumbnailFile().getBytes());
         }
+
+        // Save the updated song to the db
+        songRepository.save(existingSong);
+//        System.out.println("Received update request for songId: " + songId);
+//        System.out.println("Title: " + songUpdateDTO.getTitle());
+//        System.out.println("Genres: " + songUpdateDTO.getGenres());
+//        System.out.println("Uploaded Date: " + songUpdateDTO.getUploadedDate());
+//        System.out.println("Thumbnail File: " + songUpdateDTO.getThumbnailFile());
+        return ResponseEntity.ok("Song updated successfully");
     }
+
 }
