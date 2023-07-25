@@ -12,10 +12,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,7 +31,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/songs")
+//@RequestMapping("/songs")
 public class SongController {
 
     @Autowired
@@ -37,12 +41,14 @@ public class SongController {
     SongRepository songRepository;
     private Date uploadedDate;
 
-//    @PreAuthorize("hasAuthority('listener')")
-//    @GetMapping("/allsongs")
-//    public ResponseEntity<List<Song>> getAllSongs() {
-//        List<Song> songs = songService.getAllSongs();
-//        return new ResponseEntity<>(songs, HttpStatus.OK);
-//
+    @PreAuthorize("hasAuthority('listener')")
+    @GetMapping("/allsongs")
+    public ResponseEntity<List<Song>> getAllSongs() {
+        List<Song> songs = songService.getAllSongs();
+        return new ResponseEntity<>(songs, HttpStatus.OK);
+
+    }
+
 
     @PreAuthorize("hasAuthority('listener')")
     @GetMapping("/songs")
@@ -195,15 +201,16 @@ public class SongController {
     @PutMapping("/{songId}")
     public ResponseEntity<String> updateSong(@PathVariable Long songId,
                                              @ModelAttribute SongUpdateDTO songUpdateDTO,
-                                             Principal principal) {
-        String authenticatedArtist = principal.getName();
-
-        // Checking if the authenticated artist matches the provided artist name
-        if (!authenticatedArtist.equals(songUpdateDTO.getArtist())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to update songs for other artists.");
+                                             Authentication authentication) throws IOException {
+        // 1: Check if the user is authenticated ( is artist or not )
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in to update a song.");
         }
 
-        // Retrieve the  Song  which  already present  in db using the songId
+        // 2: Get the authenticated artist's username
+        String authenticatedArtist = authentication.getName();
+
+        // Getting  the Song which already present in the db using the songId
         Optional<Song> optionalSong = songRepository.findById(songId);
 
         if (optionalSong.isEmpty()) {
@@ -212,6 +219,13 @@ public class SongController {
 
         Song existingSong = optionalSong.get();
 
+        // 3: Checking if the authenticated artist matches the provided artist name
+        if (!authenticatedArtist.equals(existingSong.getArtist())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to update songs for other artists.");
+        }
+
+        // Proceed with the update as the artist is authorized to modify the song
+
         if (songUpdateDTO.getTitle() != null) {
             existingSong.setTitle(songUpdateDTO.getTitle());
         }
@@ -219,14 +233,23 @@ public class SongController {
         if (songUpdateDTO.getGenres() != null) {
             existingSong.setGenres(songUpdateDTO.getGenres());
         }
+        if (songUpdateDTO.getThumbnailFile() != null) {
+            existingSong.setThumbnail(songUpdateDTO.getThumbnailFile().getBytes());
+        }
 
         if (songUpdateDTO.getUploadedDate() != null) {
-            Date uploadedDate = parseUploadedDate(songUpdateDTO.getUploadedDate());
-            existingSong.setUploadedDate(uploadedDate);
+            // Parse the uploaded date from the String representation to Date
+            try {
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                Date uploadedDate = format.parse(songUpdateDTO.getUploadedDate());
+                existingSong.setUploadedDate(uploadedDate);
+            } catch (ParseException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid date format. Use 'yyyy-MM-dd'.");
+            }
         }
 
         try {
-            // Convert the MultipartFile to a byte array and set it as the new thumbnail(pic)
+            // Convert  MultipartFile to a byte array and set it as the new thumbnail (pic)
             if (songUpdateDTO.getThumbnailFile() != null) {
                 existingSong.setThumbnail(songUpdateDTO.getThumbnailFile().getBytes());
             }
