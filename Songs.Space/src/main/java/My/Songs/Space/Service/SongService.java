@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -88,13 +90,14 @@ public class SongService {
             songsWithTitle.addAll(remainingSongs);
 
             sortedSongs = songsWithTitle;
+
         } else {
-            // If sortField is empty, sort by uploaded date in descending order
+//            // If sortField is empty, sort by uploaded date in descending order
             sortedSongs = filteredSongs.stream()
                     .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
                     .sorted(Comparator.comparing(SongDto::getUploadedDate).reversed())
                     .collect(Collectors.toList());
-
+//
             if (sortedSongs.isEmpty()) {
                 throw new IllegalArgumentException("No songs found with the provided search criteria.");
             }
@@ -102,6 +105,8 @@ public class SongService {
 
         return sortedSongs;
     }
+
+
 
     public List<SongDto> getSongsSortedByUploadedDate(OffsetDateTime targetDateTime) {
         List<Song> songs = songRepository.findAll();
@@ -134,4 +139,5 @@ public class SongService {
 
         return songDtos;
     }
+
 }
