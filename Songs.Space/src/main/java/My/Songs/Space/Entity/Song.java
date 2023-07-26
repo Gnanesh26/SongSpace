@@ -32,6 +32,8 @@ public class Song {
     @Column
     private String artist;
 
+    @Transient
+    byte[] thumbnailData;
 
     public Song() {
     }
@@ -39,6 +41,9 @@ public class Song {
     public Song(String title, String genres, Date uploadedDate, byte[] thumbnail, String artist) {
     }
 
+    public void setThumbnailData(  byte[] thumbnailData){
+         this.thumbnailData=thumbnailData;
+    }
 
     public Long getId() {
         return id;

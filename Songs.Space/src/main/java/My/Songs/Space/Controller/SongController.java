@@ -42,12 +42,13 @@ public class SongController {
     private Date uploadedDate;
 
     @PreAuthorize("hasAuthority('listener')")
-    @GetMapping("/allsongs")
-    public ResponseEntity<List<Song>> getAllSongs() {
-        List<Song> songs = songService.getAllSongs();
-        return new ResponseEntity<>(songs, HttpStatus.OK);
 
-    }
+        @GetMapping("/allsongs")
+        public ResponseEntity<List<Song>> getAllSongs() {
+            List<Song> songs = songService.getAllSongs();
+            return new ResponseEntity<>(songs, HttpStatus.OK);
+
+        }
 
 
     @PreAuthorize("hasAuthority('listener')")
@@ -56,11 +57,11 @@ public class SongController {
             @RequestParam(required = false) String searchTitle,
             @RequestParam(required = false) String filterArtist,
             @RequestParam(required = false) String filterGenres,
-            @RequestParam(value = "sortField", defaultValue = "") String sortField,
+            @RequestParam(value = "title", defaultValue = "") String title,
             @RequestParam(required = false, defaultValue = "") String date) {
 
         // Check if at least one search, filter, or sort parameter is provided
-        if (StringUtils.isAllBlank(searchTitle, filterArtist, filterGenres) && StringUtils.isBlank(sortField) && StringUtils.isBlank(date)) {
+        if (StringUtils.isAllBlank(searchTitle, filterArtist, filterGenres) && StringUtils.isBlank(title) && StringUtils.isBlank(date)) {
             String errorMessage = "No search criteria provided. Please provide at least one valid search, filter, or sort parameter.";
             return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
         }
@@ -81,7 +82,7 @@ public class SongController {
             // If sortField is provided, sort by title matching the specified value
             List<SongDto> songsByTitle;
             try {
-                songsByTitle = songService.getSongsSortedByTitle(searchTitle, filterArtist, filterGenres, sortField);
+                songsByTitle = songService.getSongsSortedByTitle(searchTitle, filterArtist, filterGenres, title);
             } catch (IllegalArgumentException e) {
                 String errorMessage = e.getMessage();
                 return new ResponseEntity<>(errorMessage, HttpStatus.NOT_FOUND);
@@ -265,11 +266,11 @@ public class SongController {
 
         // Save the updated song to the db
         songRepository.save(existingSong);
-//        System.out.println("Received update request for songId: " + songId);
-//        System.out.println("Title: " + songUpdateDTO.getTitle());
-//        System.out.println("Genres: " + songUpdateDTO.getGenres());
-//        System.out.println("Uploaded Date: " + songUpdateDTO.getUploadedDate());
-//        System.out.println("Thumbnail File: " + songUpdateDTO.getThumbnailFile());
+        System.out.println("Received update request for songId: " + songId);
+        System.out.println("Title: " + songUpdateDTO.getTitle());
+        System.out.println("Genres: " + songUpdateDTO.getGenres());
+        System.out.println("Uploaded Date: " + songUpdateDTO.getUploadedDate());
+        System.out.println("Thumbnail File: " + songUpdateDTO.getThumbnailFile());
         return ResponseEntity.ok("Song updated successfully");
     }
 

@@ -32,9 +32,11 @@ public class SongService {
     @Autowired
     UserInfoRepository userInfoRepository;
 
+
     public List<Song> getAllSongs() {
         return songRepository.findAll();
     }
+
 
     public Song saveSong(Song song) {
         return songRepository.save(song);
@@ -49,7 +51,7 @@ public class SongService {
     }
 
 
-    public List<SongDto> getSongsSortedByTitle(String searchTitle, String filterArtist, String filterGenres, String sortField) {
+    public List<SongDto> getSongsSortedByTitle(String searchTitle, String filterArtist, String filterGenres, String title) {
         List<Song> songs = songRepository.findAll();
 
         // Filter songs based on searchTitle, filterArtist, and filterGenres
@@ -62,10 +64,10 @@ public class SongService {
 
         List<SongDto> sortedSongs;
 
-        if (sortField != null && !sortField.isEmpty()) {
+        if (title != null && !title.isEmpty()) {
             // Check if any songs match the specified title in sortField
             List<Song> songsMatchingSortField = filteredSongs.stream()
-                    .filter(song -> song.getTitle().equalsIgnoreCase(sortField))
+                    .filter(song -> song.getTitle().equalsIgnoreCase(title))
                     .collect(Collectors.toList());
 
             if (songsMatchingSortField.isEmpty()) {
@@ -74,12 +76,12 @@ public class SongService {
 
             // Sort by title matching the specified value
             List<SongDto> songsWithTitle = filteredSongs.stream()
-                    .filter(song -> song.getTitle().equalsIgnoreCase(sortField))
+                    .filter(song -> song.getTitle().equalsIgnoreCase(title))
                     .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
                     .collect(Collectors.toList());
 
             List<SongDto> remainingSongs = filteredSongs.stream()
-                    .filter(song -> !song.getTitle().equalsIgnoreCase(sortField))
+                    .filter(song -> !song.getTitle().equalsIgnoreCase(title))
                     .map(song -> new SongDto(song.getTitle(), song.getGenres(), song.getUploadedDate(), song.getArtist()))
                     .collect(Collectors.toList());
 
