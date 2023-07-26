@@ -57,8 +57,10 @@ public class SongController {
             @RequestParam(required = false) String searchTitle,
             @RequestParam(required = false) String filterArtist,
             @RequestParam(required = false) String filterGenres,
-            @RequestParam(value = "title", defaultValue = "") String title,
-            @RequestParam(required = false, defaultValue = "") String date) {
+//            @RequestParam(value = "title", defaultValue = "") String title,
+            @RequestParam(required = false) String title,
+//            @RequestParam(required = false, defaultValue = "") String date) {
+            @RequestParam(required = false) String date){
 
         // Check if at least one search, filter, or sort parameter is provided
         if (StringUtils.isAllBlank(searchTitle, filterArtist, filterGenres) && StringUtils.isBlank(title) && StringUtils.isBlank(date)) {
@@ -128,9 +130,10 @@ public class SongController {
 
     @PreAuthorize("hasAuthority('artist')")
     @DeleteMapping("/{songId}")
-    public ResponseEntity<String> deleteSong(@PathVariable Long songId, Principal principal) {
-        String artistUsername = principal.getName();
+    public ResponseEntity<String> deleteSong(@PathVariable Long songId, Authentication authentication) {
+//        String artistUsername = principal.getName();
 
+        String artistUsername = authentication.getName();
         // Retrieve the song by ID
         Song songToDelete = songRepository.findById(songId)
                 .orElseThrow(() -> new RuntimeException("Song not found"));
